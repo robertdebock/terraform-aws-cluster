@@ -29,7 +29,8 @@ resource "aws_lb_listener" "default" {
   count             = length(var.services)
   load_balancer_arn = aws_lb.default.arn
   port              = var.services[count.index].port
-  protocol          = var.services[count.index].protocol
+  # TODO: must be one of 'UDP, TCP, TLS, TCP_UDP'
+  protocol          = local._listener_protocol[var.services[count.index].protocol]
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.default[count.index].arn

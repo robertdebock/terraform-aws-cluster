@@ -48,9 +48,20 @@ locals {
   _health_check = {
     HTTP    = "HTTP"
     HTTPS   = "HTTPS"
-    TCP_UDP = "TCP"
+    TCP_UDP = "TCP" # Healthchecking is not possible for UDP.
     TCP     = "TCP"
     TLS     = "TCP"
     UDP     = "TCP" # Healthchecking is not possible for UDP.
+  }
+
+  # Maps protocols from aws_lb_target_group to aws_lb_listerer
+  _listener_protocol = {
+    "GENEVE"  = "TCP"
+    "HTTP"    = "TCP"
+    "HTTPS"   = "TCP"
+    "TCP"     = "TCP"
+    "TCP_UDP" = "TCP_UDP"
+    "TLS"     = "TLS"
+    "UDP"     = "UDP"
   }
 }
