@@ -51,7 +51,7 @@ resource "aws_launch_template" "default" {
   instance_type                        = local.instance_type
   ebs_optimized                        = true
   disable_api_termination              = true
-  key_name                             = aws_key_pair.default.id
+  key_name                             = aws_key_pair.default[0].id
   instance_initiated_shutdown_behavior = "terminate"
   user_data                            = fileexists(var.user_data) ? filebase64(var.user_data) : filebase64("${path.module}/user_data.sh")
   block_device_mappings {
