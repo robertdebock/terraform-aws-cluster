@@ -1,0 +1,53 @@
+---
+on:
+  - push
+
+jobs:
+  terraform:
+    name: terraform
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: eu-central-1
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - name: consul
+          - name: default
+          - name: httpd
+          - name: one
+          - name: vault
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: terraform init
+        uses: robertdebock/terraform-action@1.1.1
+        with:
+          directory: ./examples/${{ matrix.config.name }}
+      - name: terraform validate
+        uses: robertdebock/terraform-action@1.1.1
+        with:
+          action: validate
+          directory: ./examples/${{ matrix.config.name }}
+      - name: terraform plan
+        uses: robertdebock/terraform-action@1.1.1
+        with:
+          action: plan
+          directory: ./examples/${{ matrix.config.name }}
+      - name: terraform apply
+        uses: robertdebock/terraform-action@1.1.1
+        with:
+          action: apply
+          directory: ./examples/${{ matrix.config.name }}
+        env:
+          TF_CLI_ARGS: "-input=false -auto-approve"
+      - name: terraform destroy
+        uses: robertdebock/terraform-action@1.1.1
+        with:
+          action: destroy
+          directory: ./examples/${{ matrix.config.name }}
+        env:
+          TF_CLI_ARGS: "-input=false -auto-approve"
+        if: ${{ always() }}
