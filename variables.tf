@@ -43,26 +43,6 @@ variable "amount" {
   }
 }
 
-# variable "service_port" {
-#   description = "What TCP or UDP port to expose."
-#   type        = number
-#   default     = 80
-#   validation {
-#     condition     = var.service_port >= 1 && var.service_port <= 65535
-#     error_message = "Please use a port number between 0 and 65536."
-#   }
-# }
-#
-# variable "service_protocol" {
-#   description = "The protocol to expose."
-#   type        = string
-#   default     = "TCP"
-#   validation {
-#     condition     = contains(["HTTP", "HTTPS", "TCP", "TCP_UDP", "TLS", "UDP"], var.service_protocol)
-#     error_message = "Please use a protocol from this list: \"HTTP\", \"HTTPS\", \"TCP\", \"TCP_UDP\", \"TLS\" or \"UDP\"."
-#   }
-# }
-
 variable "services" {
   description = "A map of ports and protocols to service."
   type        = list(any)

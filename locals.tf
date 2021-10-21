@@ -56,12 +56,12 @@ locals {
 
   # Maps protocols from aws_lb_target_group to aws_lb_listerer
   _listener_protocol = {
-    "GENEVE"  = "TCP"
-    "HTTP"    = "TCP"
-    "HTTPS"   = "TCP"
-    "TCP"     = "TCP"
-    "TCP_UDP" = "TCP_UDP"
-    "TLS"     = "TLS"
-    "UDP"     = "UDP"
+    GENEVE  = "TCP"
+    HTTP    = "TCP"
+    HTTPS   = "TCP"
+    TCP     = "TCP"
+    TCP_UDP = "TCP_UDP"
+    TLS     = "TLS"
+    UDP     = "UDP"
   }
 }
