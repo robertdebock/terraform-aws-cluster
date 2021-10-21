@@ -10,7 +10,7 @@ variable "name" {
 
 variable "key_location" {
   description = "The location of the public key"
-  default     = ""
+  default     = "id_rsa.pub"
 }
 
 variable "region" {
