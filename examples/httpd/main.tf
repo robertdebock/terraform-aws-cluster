@@ -1,6 +1,6 @@
 module "cluster" {
   source = "../../"
-  name   = "httpd-3"
+  name   = "httpd"
 }
 
 output "public_ip_address" {

@@ -1,6 +1,6 @@
 module "cluster" {
   source = "../../"
-  name   = "vault-3"
+  name   = "vault"
   size   = "development"
   services = [
     {
