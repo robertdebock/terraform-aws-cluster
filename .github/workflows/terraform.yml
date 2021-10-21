@@ -23,7 +23,9 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: generate ssh keys
-        run: cd ./examples/${{ matric.config.name }} ; ssh-keygen -f id_rsa -q -N ""
+        run: |
+          cd ./examples/${{ metric.config.name }}
+          ssh-keygen -f id_rsa -q -N ""
       - name: terraform init
         uses: robertdebock/terraform-action@1.1.1
         with:
