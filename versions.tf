@@ -8,10 +8,6 @@ terraform {
       source  = "hashicorp/local"
       version = "2.1.0"
     }
-    template = {
-      source  = "hashicorp/cloudinit"
-      version = "2.2.0"
-    }
   }
 }
 
