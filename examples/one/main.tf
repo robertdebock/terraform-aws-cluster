@@ -1,7 +1,7 @@
 module "cluster" {
   source = "../../"
   name   = "one"
-  amount = "one"
+  amount = 1
 }
 
 output "public_ip_address" {
