@@ -49,6 +49,7 @@ locals {
     HTTP    = "HTTP"
     HTTPS   = "HTTPS"
     TCP_UDP = "TCP"
+    TCP     = "TCP"
     TLS     = "TCP"
     UDP     = "TCP" # Healthchecking is not possible for UDP.
   }
