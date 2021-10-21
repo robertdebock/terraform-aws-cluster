@@ -193,6 +193,7 @@ resource "aws_security_group_rule" "service" {
   from_port         = var.services[count.index].port
   to_port           = var.services[count.index].port
   protocol          = var.services[count.index].protocol
+  protocol          = local._security_group_rule_protocol[var.services[count.index].protocol]
   cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = aws_security_group.default.id
 }

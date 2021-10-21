@@ -44,8 +44,9 @@ locals {
   }
   associate_public_ip_address = local._associate_public_ip_address[var.size]
 
-  # health_check.protocol can be one of [HTTP HTTPS TCP].
+  # Mpas protocols from aws_lb_target_group to aws_lb_target_group
   _health_check = {
+    GENEVE  = "TCP"
     HTTP    = "HTTP"
     HTTPS   = "HTTPS"
     TCP_UDP = "TCP" # Healthchecking is not possible for UDP.
@@ -62,6 +63,17 @@ locals {
     TCP     = "TCP"
     TCP_UDP = "TCP_UDP"
     TLS     = "TLS"
+    UDP     = "UDP"
+  }
+
+  # Maps protocols from aws_lb_target_group to security_group_rule.
+  _security_group_rule_protocol = {
+    GENEVE  = "TCP"
+    HTTP    = "TCP"
+    HTTPS   = "TCP"
+    TCP     = "TCP"
+    TCP_UDP = "TCP"
+    TLS     = "TCP"
     UDP     = "UDP"
   }
 }
