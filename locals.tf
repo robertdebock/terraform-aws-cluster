@@ -30,6 +30,22 @@ locals {
   # aws_lb_target_group.protocol can be:
   # GENEVE, HTTP, HTTPS, TCP, TCP_UDP, TLS, or UDP.
 
+  # aws_alb_target_group.health_check.protocol can be:
+  # HTTP, HTTPS or TCP.
+
+  _aws_lb_target_group_health_check_protocol = {
+    GENEVE  = "TCP"
+    HTTP    = "HTTP"
+    HTTPS   = "HTTPS"
+    TCP     = "TCP"
+    TCP_UDP = "TCP"
+    TLS     = "HTTPS"
+    UDP     = "TCP" # How owtherwise to check?
+  }
+  
+  # aws_lb_target_group.protocol can be:
+  # GENEVE, HTTP, HTTPS, TCP, TCP_UDP, TLS, or UDP.
+
   # aws_lb_listener.protocol can be:
   # TCP, TLS, UDP, and TCP_UDP.
 
