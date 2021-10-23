@@ -32,6 +32,4 @@ api_addr = "http://$(curl http://169.254.169.254/latest/meta-data/local-ipv4):82
 ui=true
 EOF
 
-service vault start
-chkconfig vault on
-
+systemctl --now enable vault
