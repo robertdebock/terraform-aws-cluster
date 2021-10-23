@@ -49,11 +49,11 @@ variable "services" {
   default = [
     {
       port     = 80
-      protocol = "HTTP"
+      protocol = "TCP"
     },
     {
       port     = 443
-      protocol = "HTTPS"
+      protocol = "TCP"
     }
   ]
 }
