@@ -18,15 +18,6 @@ locals {
   }
   volume_size = local._volume_size[var.size]
 
-  # TODO: Solve this in a data object with filtering.
-  _instance_ami = {
-    eu-central-1 = "ami-0233214e13e500f77"
-    eu-west-1    = "ami-047bb4163c506cd98"
-    eu-west-2    = "ami-f976839e"
-    eu-west-3    = "ami-0ebc281c20e89ba4b"
-  }
-  instance_ami = local._instance_ami[var.region]
-
   _associate_public_ip_address = {
     development = true
     minimum     = false
@@ -58,7 +49,7 @@ locals {
 
   # aws_securityu_group_rule.protocol can be:
   # icmp, icmpv6, tcp, udp, all or use the protocol number.
-  
+
   # Maps protocols from aws_lb_target_group to security_group_rule.
   _security_group_rule_protocol = {
     GENEVE  = "TCP"

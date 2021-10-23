@@ -1,3 +1,13 @@
+# Find amis.
+data "aws_ami" "default" {
+  most_recent = true
+  filter {
+    name = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-ebs"]
+  }
+  owners = ["amazon"]
+}
+
 # Add a load balancer.
 resource "aws_lb" "default" {
   name               = var.name
@@ -47,7 +57,8 @@ resource "aws_placement_group" "default" {
 resource "aws_launch_template" "default" {
   name                                 = var.name
   update_default_version               = true
-  image_id                             = local.instance_ami
+  image_id                             = data.aws_ami.default.id
+
   instance_type                        = local.instance_type
   ebs_optimized                        = true
   disable_api_termination              = true

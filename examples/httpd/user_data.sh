@@ -5,5 +5,4 @@ yum -y update
 
 # Run a webserver.
 yum -y install httpd
-service httpd start
-chkconfig httpd on
+systemctl --now enable httpd
