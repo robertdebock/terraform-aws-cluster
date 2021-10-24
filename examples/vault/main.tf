@@ -1,3 +1,11 @@
+resource "aws_kms_key" "default" {
+  description             = "vault"
+}
+
+output "aws_kms_key" {
+  value = aws_kms_key.default.key_id
+}
+
 module "cluster" {
   source = "../../"
   name   = "vault"

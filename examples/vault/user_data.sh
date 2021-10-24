@@ -23,11 +23,14 @@ listener "tcp" {
 
 api_addr = "http://$(curl http://169.254.169.254/latest/meta-data/local-ipv4):8200"
 
-# TODO: Add a aws_kms_key to this module, refer to it here.
-# seal "awskms" {
-#   region = "$${AWS_REGION}"
-#   kms_key_id = "$${KMS_KEY}"
-# }
+# TODO: Add a aws_kms_key, refer to it here.
+seal "awskms" {
+  region     = "eu-cental-1"
+  access_key = "a"
+  secret_key = "b"
+  kms_key_id = "c"
+  endpoint   = "d"
+}
 
 ui=true
 EOF
