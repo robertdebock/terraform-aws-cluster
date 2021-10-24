@@ -2,7 +2,7 @@
 data "aws_ami" "default" {
   most_recent = true
   filter {
-    name = "name"
+    name   = "name"
     values = ["amzn2-ami-hvm-*-x86_64-ebs"]
   }
   owners = ["amazon"]
@@ -55,9 +55,9 @@ resource "aws_placement_group" "default" {
 
 # Create a launch template.
 resource "aws_launch_template" "default" {
-  name                                 = var.name
-  update_default_version               = true
-  image_id                             = data.aws_ami.default.id
+  name                   = var.name
+  update_default_version = true
+  image_id               = data.aws_ami.default.id
 
   instance_type                        = local.instance_type
   ebs_optimized                        = true
@@ -125,7 +125,7 @@ resource "aws_autoscaling_group" "default" {
 
 # Place an SSH key.
 resource "aws_key_pair" "default" {
-  count = fileexists(var.key_location) ? 1 : 0
+  count      = fileexists(var.key_location) ? 1 : 0
   key_name   = var.name
   public_key = file(var.key_location)
 }

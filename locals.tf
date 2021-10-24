@@ -42,7 +42,7 @@ locals {
     TLS     = "HTTPS"
     UDP     = "TCP" # How owtherwise to check?
   }
-  
+
   # aws_lb_target_group.protocol can be:
   # GENEVE, HTTP, HTTPS, TCP, TCP_UDP, TLS, or UDP.
 
