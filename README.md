@@ -21,8 +21,10 @@ name = "my_cluster"
 region = "eu-central-1"
 size = "large"
 amount = 5
-service_protocol = "TCP"
-service_port = 443
+services = [{
+  port     = 443 
+  protocol = "TCP"
+}]
 ```
 
 Would create this infrastructure.
