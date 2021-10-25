@@ -28,7 +28,7 @@ resource "aws_lb_target_group" "default" {
   protocol = var.services[count.index].protocol
   vpc_id   = aws_vpc.default.id
   health_check {
-    protocol            = local._aws_lb_target_group_health_check_protocol[var.service[count.index].protocol]
+    protocol            = local._aws_lb_target_group_health_check_protocol[var.services[count.index].protocol]
     healthy_threshold   = 10
     unhealthy_threshold = 10
   }

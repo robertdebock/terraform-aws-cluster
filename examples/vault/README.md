@@ -1,6 +1,6 @@
-# Consul
+# Vault
 
-Spin up a HashiCorp Vault cluster.
+Spin up a HashiCorp Vault cluster that automatically unseals and members joins based on AWS tags.
 
 ## Setup
 

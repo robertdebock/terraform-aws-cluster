@@ -33,11 +33,11 @@ listener "tcp" {
 api_addr = "http://$(curl http://169.254.169.254/latest/meta-data/local-ipv4):8200"
 
 seal "awskms" {
-  region     = "eu-central-1"
-  kms_key_id = "9827004b-2d69-4787-be2e-e5cd5ff0eee1"
+  region     = "${region}"
+  kms_key_id = "${kms_key_id}"
 }
 
-retry_join          = ["provider=aws tag_key=Name tag_value=vault"]
+retry_join          = ["provider=aws tag_key=Name tag_value=${name}"]
 EOF
 
 systemctl --now enable vault
