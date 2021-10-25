@@ -21,3 +21,14 @@ variable "name" {
     error_message = "Please use a minimum of 3 and a maximum of 8 characters. \"default\" can't be used because it is reserved."
   }
 }
+
+# To read the unseal key, the AWS access key and AWS secret key need to be placed in the Vault configuration.
+variable "access_key" {
+  description = "The AWS access key. You can set a variable TF_VAR_aws_access_key."
+  type        = string
+}
+
+variable "secret_key" {
+  description = "The AWS secret key. You can set a variable TF_VAR_aws_secret_key."
+  type        = string
+}

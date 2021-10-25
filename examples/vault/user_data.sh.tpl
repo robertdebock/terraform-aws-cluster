@@ -10,6 +10,9 @@ setcap cap_ipc_lock=+ep $(readlink -f $(which vault))
 
 mv /etc/vault.d/vault.hcl /etc/vault.d/vault.hcl.original
 
+mkdir -p /vault/data
+chown vault:vault /vault/data
+
 cat << EOF >> /etc/vault.d/vault.hcl
 # Full configuration options can be found at https://www.vaultproject.io/docs/configuration
 
@@ -19,7 +22,7 @@ ui=true
 #disable_mlock = true
 
 storage "raft" {
-  path = "/opt/vault/data"
+  path = "/vault/data"
   node_id = "$(curl http://169.254.169.254/latest/meta-data/hostname)"
 }
 
@@ -35,9 +38,14 @@ api_addr = "http://$(curl http://169.254.169.254/latest/meta-data/local-ipv4):82
 seal "awskms" {
   region     = "${region}"
   kms_key_id = "${kms_key_id}"
+  access_key = "${access_key}"
+  secret_key = "${secret_key}"
 }
 
 retry_join          = ["provider=aws tag_key=Name tag_value=${name}"]
 EOF
+
+# The first instance will be able to `init` and save the root token and recovery keys.
+vault operator init > /vault/data/init.txt
 
 systemctl --now enable vault
