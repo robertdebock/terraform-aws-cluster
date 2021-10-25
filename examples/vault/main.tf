@@ -3,15 +3,19 @@ resource "aws_kms_key" "default" {
   description = "vault"
 }
 
+# Find current region.
+data "aws_region" "default" {}
+
 # Write user_data.sh.
 resource "local_file" "default" {
   content = templatefile("user_data.sh.tpl",
     {
-      kms_key_id = aws_kms_key.default.id
-      region     = data.aws_region.default.name
-      name       = var.name
-      access_key = var.access_key
-      secret_key = var.secret_key
+      kms_key_id    = aws_kms_key.default.id
+      region        = data.aws_region.default.name
+      name          = var.name
+      access_key    = var.access_key
+      secret_key    = var.secret_key
+      vault_version = var.vault_version
     }
   )
   filename             = "user_data.sh"
@@ -19,6 +23,7 @@ resource "local_file" "default" {
   directory_permission = "0755"
 }
 
+# Call the cluster module.
 module "cluster" {
   source = "../../"
   name   = var.name
@@ -29,20 +34,5 @@ module "cluster" {
       port     = 8200
       protocol = "TCP"
     }
-  # TODO: Let this module depennd on the local_file. Maybe:
-  # thing = local_file.default.xyz
-  # Or maybe move the local_file to a different directory.
   ]
-  # This module depends on the `user_data.sh` file to be rendered, but:
-  # Providers cannot be configured within modules using count, for_each or depends_on.
-  #
-  # When deleting the `provider` block from `../../providers.tf`:
-  # The "count" value depends on resource attributes that cannot be determined until apply, so Terraform cannot predict how many
-  # instances will be created. To work around this, use the -target argument to first apply only the resources that the count depends
-  # on.
-  #
-  # As a workaround: `terrafrom apply ; terraform apply`.
-  # depends_on = [
-  #   local_file.default,
-  # ]
 }
