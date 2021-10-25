@@ -82,11 +82,15 @@ module "cluster" {
   source = "../../"
   name   = var.name
   size   = "development"
+  region = var.region
   services = [
     {
       port     = 8200
       protocol = "TCP"
     }
+  # TODO: Let this module depennd on the local_file. Maybe:
+  # thing = local_file.default.xyz
+  # Or maybe move the local_file to a different directory.
   ]
   # This module depends on the `user_data.sh` file to be rendered, but:
   # Providers cannot be configured within modules using count, for_each or depends_on.
