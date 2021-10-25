@@ -15,6 +15,10 @@ mv /etc/vault.d/vault.hcl /etc/vault.d/vault.hcl.original
 mkdir -p /vault/data
 chown vault:vault /vault/data
 
+# 169.254.169.254 is an Amazon service to provide information about itself.
+my_hostname="$(curl http://169.254.169.254/latest/meta-data/hostname)"
+my_ipaddress="$(curl http://169.254.169.254/latest/meta-data/local-ipv4)"
+
 cat << EOF >> /etc/vault.d/vault.hcl
 # Full configuration options can be found at https://www.vaultproject.io/docs/configuration
 
@@ -25,18 +29,17 @@ ui=true
 
 storage "raft" {
   path = "/vault/data"
-  # The IP 169.254.169.254 is an Amazon service to provide details about itself.
-  node_id = "$(curl http://169.254.169.254/latest/meta-data/hostname)"
+  node_id = "$${my_hostname}"
 }
 
-cluster_addr = "http://$(curl http://169.254.169.254/latest/meta-data/local-ipv4):8201"
+cluster_addr = "http://$${my_ipaddress}:8201"
 
 listener "tcp" {
-  address     = "$(curl http://169.254.169.254/latest/meta-data/local-ipv4):8200"
+  address     = "$${my_ipaddress}:8200"
   tls_disable = 1
 }
 
-api_addr = "http://$(curl http://169.254.169.254/latest/meta-data/local-ipv4):8200"
+api_addr = "http://$${my_ipaddress}:8200"
 
 seal "awskms" {
   region     = "${region}"
