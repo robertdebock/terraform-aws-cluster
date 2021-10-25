@@ -1,4 +1,4 @@
-# Default
+# Single
 
 Spin up a cluster. Because there is no `user_data.sh`, these machines will not provide any service.
 

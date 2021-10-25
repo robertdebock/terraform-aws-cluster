@@ -17,7 +17,7 @@ jobs:
           - name: consul
           - name: default
           - name: httpd
-          - name: one
+          - name: single
           - name: vault
     steps:
       - name: checkout

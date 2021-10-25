@@ -1,6 +1,6 @@
 module "cluster" {
   source = "../../"
-  name   = "one"
+  name   = "single"
   amount = 1
 }
 
