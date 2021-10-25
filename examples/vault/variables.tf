@@ -22,6 +22,16 @@ variable "name" {
   }
 }
 
+variable "vault_version" {
+  description = "The version of Vault to install."
+  type        = string
+  default     = "1.8.4"
+  validation {
+    condition     = length(var.vault_version) == 5 && can(regex("^1\.", var.vault_version))
+    error_message = "Please use a SemVer version, where the major version is \"1\"."
+  }
+}
+
 # To read the unseal key, the AWS access key and AWS secret key need to be placed in the Vault configuration.
 variable "access_key" {
   description = "The AWS access key. You can set a variable TF_VAR_aws_access_key."

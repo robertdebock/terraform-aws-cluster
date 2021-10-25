@@ -1,10 +1,12 @@
 #!/bin/bash
 
+yum update -y
+
 yum install -y yum-utils
 
 yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
 
-yum install -y vault
+yum install -y vault-${vault_version}
 
 setcap cap_ipc_lock=+ep $(readlink -f $(which vault))
 
@@ -23,6 +25,7 @@ ui=true
 
 storage "raft" {
   path = "/vault/data"
+  # The IP 169.254.169.254 is an Amazon service to provide details about itself.
   node_id = "$(curl http://169.254.169.254/latest/meta-data/hostname)"
 }
 
