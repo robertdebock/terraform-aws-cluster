@@ -1,7 +1,6 @@
 module "cluster" {
   source = "../../"
   name   = "consul"
-  region = "eu-central-1"
   size   = "development"
   services = [
     {
