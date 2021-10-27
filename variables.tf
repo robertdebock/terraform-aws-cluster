@@ -18,8 +18,8 @@ variable "region" {
   type        = string
   default     = "eu-central-1"
   validation {
-    condition     = contains(["eu-west-1", "eu-west-2", "eu-west-3", "eu-central-1"], var.region)
-    error_message = "Please use \"eu-west-1\", \"eu-west-2\", \"eu-west-3\" or \"eu-central-1\"."
+    condition     = contains(["eu-central-1", "eu-north-1", "eu-south-1", "eu-west-1", "eu-west-2", "eu-west-3", ], var.region)
+    error_message = "Please use \"eu-central-1\", \"eu-north-1\", \"eu-south-1\", \"eu-west-1\", \"eu-west-2\" or \"eu-west-3\"."
   }
 }
 
