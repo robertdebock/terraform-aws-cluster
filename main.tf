@@ -55,10 +55,9 @@ resource "aws_placement_group" "default" {
 
 # Create a launch template.
 resource "aws_launch_template" "default" {
-  name                   = var.name
-  update_default_version = true
-  image_id               = data.aws_ami.default.id
-
+  name                                 = var.name
+  update_default_version               = true
+  image_id                             = data.aws_ami.default.id
   instance_type                        = local.instance_type
   ebs_optimized                        = true
   disable_api_termination              = true
@@ -143,7 +142,7 @@ resource "aws_internet_gateway" "default" {
 }
 
 # Add a routing table to the default routing table.
-resource "aws_default_route_table" "example" {
+resource "aws_default_route_table" "default" {
   default_route_table_id = aws_vpc.default.default_route_table_id
   route = [
     {
