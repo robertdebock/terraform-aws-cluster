@@ -9,28 +9,6 @@ terraform init
 test -f id_rsa.pub || ssh-keygen -f id_rsa
 ```
 
-Generate (or place) the SSL keys and certificates.
-
-```shell
-# Make a directory.
-mkdir files/
-
-# Create a private key for the ca.
-openssl genrsa -out files/ca.key 2048
-
-# Create certificate for the ca.
-openssl req -x509 -new -nodes -key files/ca.key -sha256 -days 1825 -out files/ca.pem
-
-# Create a private key for the service.
-openssl genrsa -out files/vault.key 2048
-
-# Create CSR for the service.
-openssl req -new -key files/vault.key -out files/vault.csr
-
-openssl x509 -req -in files/vault.csr -CA files/ca.pem -CAkey files/ca.key -CAcreateserial \
--out files/vault.crt -days 825 -sha256
-```
-
 ## KMS auto-unsealing & automatic joining.
 
 To use the AWS KMS Key, Vault needs to be able to read the kms key.

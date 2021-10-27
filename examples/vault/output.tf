@@ -3,5 +3,5 @@ output "aws_lb_dns_name" {
 }
 
 output "vault_url" {
-  value = "https://${module.cluster.aws_lb_dns_name}:8200/ui"
+  value = "http://${module.cluster.aws_lb_dns_name}:8200/ui"
 }

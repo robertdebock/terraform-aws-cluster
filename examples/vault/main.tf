@@ -1,24 +1,18 @@
 # Make a key for unsealing.
 resource "aws_kms_key" "default" {
-  description = "vault"
+  description = var.name
 }
-
-# Find current region.
-data "aws_region" "default" {}
 
 # Write user_data.sh.
 resource "local_file" "default" {
   content = templatefile("user_data.sh.tpl",
     {
       kms_key_id    = aws_kms_key.default.id
-      region        = data.aws_region.default.name
+      region        = var.region
       name          = var.name
       access_key    = var.access_key
       secret_key    = var.secret_key
       vault_version = var.vault_version
-      tls_cert_file = file("files/vault.crt")
-      tls_key_file  = file("files/vault.key")
-      ca_file       = file("files/ca.pem")
     }
   )
   filename             = "user_data.sh"
@@ -30,7 +24,7 @@ resource "local_file" "default" {
 module "cluster" {
   source = "../../"
   name   = var.name
-  size   = "development"
+  # size   = "development"
   region = var.region
   services = [
     {

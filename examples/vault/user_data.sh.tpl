@@ -13,9 +13,6 @@ yum install -y vault-${vault_version}
 # Allow IPC lock capability to Vault.
 setcap cap_ipc_lock=+ep $(readlink -f $(which vault))
 
-# Move the original configuration.
-mv /etc/vault.d/vault.hcl /etc/vault.d/vault.hcl.original
-
 # Make a directory for Raft, certificates and init information.
 mkdir -p /vault/data
 chown vault:vault /vault/data
@@ -25,35 +22,28 @@ chmod 0750 /vault/data
 my_hostname="$(curl http://169.254.169.254/latest/meta-data/hostname)"
 my_ipaddress="$(curl http://169.254.169.254/latest/meta-data/local-ipv4)"
 
-# Place the certificate and key
-echo "${tls_cert_file}" > /opt/vault/tls/tls.crt
-echo "${tls_key_file}" > /opt/vault/tls/tls.key
-echo "${ca_file}" > /opt/vault/tls/ca.pem
-
 # Place the Vault configuration.
-cat << EOF >> /etc/vault.d/vault.hcl
+cat << EOF > /etc/vault.d/vault.hcl
 ui=true
 
 storage "raft" {
   path = "/vault/data"
   node_id = "$${my_hostname}"
   retry_join {
-    auto_join           = "provider=aws tag_key=Name tag_value=${name} region=${region} access_key_id=${access_key} secret_access_key=${secret_key}"
-    auto_join_scheme    = "https"
-    leader_ca_cert_file = "/opt/vault/tls/ca.pem"
+    auto_join        = "provider=aws tag_key=Name tag_value=${name} region=${region} access_key_id=${access_key} secret_access_key=${secret_key}"
+    auto_join_scheme = "http"
   }
 }
 
-cluster_addr = "https://$${my_ipaddress}:8201"
+cluster_addr = "http://$${my_ipaddress}:8201"
 
 listener "tcp" {
   address     = "$${my_ipaddress}:8200"
-  tls_cert_file = "/opt/vault/tls/tls.crt"
-  tls_key_file  = "/opt/vault/tls/tls.key"
+  tls_disable = true
 }
 
 # TODO: This should point to the loadbalancer.
-api_addr = "https://$${my_ipaddress}:8200"
+api_addr = "http://$${my_ipaddress}:8200"
 
 seal "awskms" {
   region     = "${region}"
@@ -66,12 +56,5 @@ EOF
 # Start and enable Vault.
 systemctl --now enable vault
 
-# Give Vault a moment to start
-sleep 30
-
-# The first instance will be able to `init` and save the root token and recovery keys.
-vault operator init > /vault/data/init.txt
-
 # Make administors life a little easier.
-echo "export VAULT_ADDR=https://$${my_ipaddress}:8200" >> /etc/profile
-echo "export VAULT_SKIP_VERIFY=true" >> /etc/profile
+echo "export VAULT_ADDR=http://$${my_ipaddress}:8200" >> /etc/profile
