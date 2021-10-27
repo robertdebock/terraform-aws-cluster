@@ -28,7 +28,7 @@ my_ipaddress="$(curl http://169.254.169.254/latest/meta-data/local-ipv4)"
 # Place the certificate and key
 echo "${tls_cert_file}" > /opt/vault/tls/tls.crt
 echo "${tls_key_file}" > /opt/vault/tls/tls.key
-echo "${ca_file}" > /opt/vault/tls/ca.key
+echo "${ca_file}" > /opt/vault/tls/ca.pem
 
 # Place the Vault configuration.
 cat << EOF >> /etc/vault.d/vault.hcl
@@ -40,7 +40,7 @@ storage "raft" {
   retry_join {
     auto_join           = "provider=aws tag_key=Name tag_value=${name} region=${region} access_key_id=${access_key} secret_access_key=${secret_key}"
     auto_join_scheme    = "https"
-    leader_ca_cert_file = "/opt/vault/tls/ca.key"
+    leader_ca_cert_file = "/opt/vault/tls/ca.pem"
   }
 }
 

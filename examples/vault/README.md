@@ -31,7 +31,7 @@ openssl x509 -req -in files/vault.csr -CA files/ca.pem -CAkey files/ca.key -CAcr
 -out files/vault.crt -days 825 -sha256
 ```
 
-## KMS auto-unsealing
+## KMS auto-unsealing & automatic joining.
 
 To use the AWS KMS Key, Vault needs to be able to read the kms key.
 Set these variables, used in user_data.sh.tpl.
