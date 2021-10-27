@@ -16,6 +16,8 @@ resource "local_file" "default" {
       access_key    = var.access_key
       secret_key    = var.secret_key
       vault_version = var.vault_version
+      tls_cert_file = file("vault-cert.pem")
+      tls_key_file  = file("vault-key.pem")
     }
   )
   filename             = "user_data.sh"

@@ -9,6 +9,12 @@ terraform init
 test -f id_rsa.pub || ssh-keygen -f id_rsa
 ```
 
+Generate (or place) the SSL certificates.
+
+```shell
+openssl req -x509 -newkey rsa:4096 -keyout vault-key.pem -out vault-cert.pem -days 365 -nodes
+```
+
 ## KMS auto-unsealing
 
 To use the AWS KMS Key, Vault needs to be able to read the kms key.
@@ -26,6 +32,8 @@ First create the `user_data.sh` file. This is required, because the module consu
 ```shell
 terraform apply -target local_file.default
 ```
+
+Note: the file `user_data.sh` requires the `aws_kms_key` to be generated too, which is done automatically.
 
 Next deploy all resources:
 

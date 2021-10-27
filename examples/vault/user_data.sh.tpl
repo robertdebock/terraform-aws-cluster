@@ -14,10 +14,15 @@ mv /etc/vault.d/vault.hcl /etc/vault.d/vault.hcl.original
 
 mkdir -p /vault/data
 chown vault:vault /vault/data
+chmod 0750 /vault/data
 
 # 169.254.169.254 is an Amazon service to provide information about itself.
 my_hostname="$(curl http://169.254.169.254/latest/meta-data/hostname)"
 my_ipaddress="$(curl http://169.254.169.254/latest/meta-data/local-ipv4)"
+
+# Place the certificate and key
+echo "${tls_cert_file}" > /vault/data/vault-cert.pem
+echo "${tls_key_file}" > /vault/data/vault-key.pem
 
 cat << EOF >> /etc/vault.d/vault.hcl
 # Full configuration options can be found at https://www.vaultproject.io/docs/configuration
@@ -32,14 +37,15 @@ storage "raft" {
   node_id = "$${my_hostname}"
 }
 
-cluster_addr = "http://$${my_ipaddress}:8201"
+cluster_addr = "https://$${my_ipaddress}:8201"
 
 listener "tcp" {
   address     = "$${my_ipaddress}:8200"
-  tls_disable = 1
+  tls_cert_file = "/vault/data/vault-cert.pem"
+  tls_key_file  = "/vault/data/vault-key.pem"
 }
 
-api_addr = "http://$${my_ipaddress}:8200"
+api_addr = "https://$${my_ipaddress}:8200"
 
 seal "awskms" {
   region     = "${region}"
