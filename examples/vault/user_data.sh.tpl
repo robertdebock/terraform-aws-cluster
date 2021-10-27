@@ -28,6 +28,7 @@ my_ipaddress="$(curl http://169.254.169.254/latest/meta-data/local-ipv4)"
 # Place the certificate and key
 echo "${tls_cert_file}" > /opt/vault/tls/tls.crt
 echo "${tls_key_file}" > /opt/vault/tls/tls.key
+echo "${ca_file}" > /opt/vault/tls/ca.key
 
 # Place the Vault configuration.
 cat << EOF >> /etc/vault.d/vault.hcl
@@ -36,6 +37,11 @@ ui=true
 storage "raft" {
   path = "/vault/data"
   node_id = "$${my_hostname}"
+  retry_join {
+    auto_join           = "provider=aws tag_key=Name tag_value=${name} region=${region} access_key_id=${access_key} secret_access_key=${secret_key}"
+    auto_join_scheme    = "https"
+    leader_ca_cert_file = "/opt/vault/tls/ca.key"
+  }
 }
 
 cluster_addr = "https://$${my_ipaddress}:8201"
@@ -46,6 +52,7 @@ listener "tcp" {
   tls_key_file  = "/opt/vault/tls/tls.key"
 }
 
+# TODO: This should point to the loadbalancer.
 api_addr = "https://$${my_ipaddress}:8200"
 
 seal "awskms" {
@@ -54,15 +61,13 @@ seal "awskms" {
   access_key = "${access_key}"
   secret_key = "${secret_key}"
 }
-
-retry_join {
-  auto_join        = "provider=aws tag_key=Name tag_value=${name} region=${region} access_key_id=${access_key} secret_access_key=${secret_key}"
-  auto_join_scheme = "http"
-}
 EOF
 
 # Start and enable Vault.
 systemctl --now enable vault
+
+# Give Vault a moment to start
+sleep 30
 
 # The first instance will be able to `init` and save the root token and recovery keys.
 vault operator init > /vault/data/init.txt
