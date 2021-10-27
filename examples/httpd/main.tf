@@ -1,7 +1,7 @@
 module "cluster" {
   source = "../../"
   name   = "httpd"
-  size   = "development"
+  region = "eu-north-1"
   services = [{
     port     = 80
     protocol = "TCP"
