@@ -56,7 +56,7 @@ seal "awskms" {
 }
 
 retry_join {
-  auto_join = "provider=aws tag_key=Name tag_value=${name} region=${region} access_key_id=${access_key} secret_access_key=${secret_key}"
+  auto_join        = "provider=aws tag_key=Name tag_value=${name} region=${region} access_key_id=${access_key} secret_access_key=${secret_key}"
   auto_join_scheme = "http"
 }
 EOF
@@ -68,5 +68,5 @@ systemctl --now enable vault
 vault operator init > /vault/data/init.txt
 
 # Make administors life a little easier.
-echo "VAULT_ADDR=https://$${my_ipaddress}:8200" >> /etc/profile
-echo "VAULT_SKIP_VERIFY=true" >> /etc/profile
+echo "export VAULT_ADDR=https://$${my_ipaddress}:8200" >> /etc/profile
+echo "export VAULT_SKIP_VERIFY=true" >> /etc/profile
