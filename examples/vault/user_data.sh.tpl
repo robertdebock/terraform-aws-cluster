@@ -26,17 +26,12 @@ my_hostname="$(curl http://169.254.169.254/latest/meta-data/hostname)"
 my_ipaddress="$(curl http://169.254.169.254/latest/meta-data/local-ipv4)"
 
 # Place the certificate and key
-echo "${tls_cert_file}" > /vault/data/vault-cert.pem
-echo "${tls_key_file}" > /vault/data/vault-key.pem
+echo "${tls_cert_file}" > /opt/vault/tls/tls.crt
+echo "${tls_key_file}" > /opt/vault/tls/tls.key
 
 # Place the Vault configuration.
 cat << EOF >> /etc/vault.d/vault.hcl
-# Full configuration options can be found at https://www.vaultproject.io/docs/configuration
-
 ui=true
-
-#mlock = true
-#disable_mlock = true
 
 storage "raft" {
   path = "/vault/data"
@@ -47,8 +42,8 @@ cluster_addr = "https://$${my_ipaddress}:8201"
 
 listener "tcp" {
   address     = "$${my_ipaddress}:8200"
-  tls_cert_file = "/vault/data/vault-cert.pem"
-  tls_key_file  = "/vault/data/vault-key.pem"
+  tls_cert_file = "/opt/vault/tls/tls.crt"
+  tls_key_file  = "/opt/vault/tls/tls.key"
 }
 
 api_addr = "https://$${my_ipaddress}:8200"
@@ -60,7 +55,10 @@ seal "awskms" {
   secret_key = "${secret_key}"
 }
 
-retry_join          = ["provider=aws tag_key=Name tag_value=${name}" region=${region} access_key_id=${access_key} secret_access_key=${secret_key}]
+retry_join {
+  auto_join = "provider=aws tag_key=Name tag_value=${name} region=${region} access_key_id=${access_key} secret_access_key=${secret_key}"
+  auto_join_scheme = "http"
+}
 EOF
 
 # Start and enable Vault.
