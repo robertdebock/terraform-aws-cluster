@@ -1,56 +1,145 @@
+# Create one VPC.
+resource "aws_vpc" "default" {
+  cidr_block = var.aws_vpc_cidr_block
+  tags       = var.tags
+}
+
+# Create an internet gateway.
+resource "aws_internet_gateway" "default" {
+  vpc_id = aws_vpc.default.id
+  tags   = var.tags
+}
+
+# Create a routing table for the internet gateway.
+resource "aws_route_table" "default" {
+  vpc_id = aws_vpc.default.id
+}
+
+# Add an internet route to the internet gateway.
+resource "aws_route" "default" {
+  route_table_id         = aws_route_table.default.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.default.id
+}
+
+# One subnet for the internet gateway.
+resource "aws_subnet" "public" {
+  vpc_id     = aws_vpc.default.id
+  cidr_block = var.aws_subnet_default_cidr_block
+  tags       = var.tags
+}
+
+# Associate the subnet to the routing table.
+resource "aws_route_table_association" "nat_gateway" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.default.id
+}
+
+# One EIP per nat gateway.
+resource "aws_eip" "nat" {
+  vpc        = true
+  tags       = var.tags
+  depends_on = [aws_internet_gateway.default]
+}
+
+# One nat gateway per subnet.
+resource "aws_nat_gateway" "default" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public.id
+  tags          = var.tags
+  depends_on    = [aws_internet_gateway.default]
+}
+
+# Add a routing table.
+resource "aws_route_table" "nat" {
+  vpc_id = aws_vpc.default.id
+  tags   = var.tags
+}
+
+# Add a route to the routing table.
+resource "aws_route" "nat" {
+  route_table_id         = aws_route_table.nat.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.default.id
+}
+
+# Create the same amount of subnets as the amount of instances.
+resource "aws_subnet" "private" {
+  count             = min(length(data.aws_availability_zones.default.names), var.amount)
+  vpc_id            = aws_vpc.default.id
+  cidr_block        = "172.16.${count.index}.0/24"
+  availability_zone = data.aws_availability_zones.default.names[count.index]
+  tags              = var.tags
+}
+
+# Associate the route table to the subnet.
+resource "aws_route_table_association" "default" {
+  count          = min(length(data.aws_availability_zones.default.names), var.amount)
+  subnet_id      = aws_subnet.private[count.index].id
+  route_table_id = aws_route_table.nat.id
+}
+
+# Find availability_zones in this region.
+data "aws_availability_zones" "default" {
+  state = "available"
+}
+
+# Place an SSH key.
+resource "aws_key_pair" "default" {
+  count      = fileexists(var.key_location) ? 1 : 0
+  key_name   = var.name
+  public_key = file(var.key_location)
+  tags       = var.tags
+}
+
 # Find amis.
 data "aws_ami" "default" {
   most_recent = true
+  owners      = ["amazon"]
   filter {
     name   = "name"
     values = ["amzn2-ami-hvm-*-x86_64-ebs"]
   }
-  owners = ["amazon"]
 }
 
-# Add a load balancer.
-resource "aws_lb" "default" {
-  name               = var.name
-  load_balancer_type = "network"
-  dynamic "subnet_mapping" {
-    for_each = aws_subnet.default.*
-    content {
-      subnet_id = aws_subnet.default[subnet_mapping.key].id
-    }
-  }
+# Create a security group.
+resource "aws_security_group" "default" {
+  name   = var.name
+  vpc_id = aws_vpc.default.id
+  tags   = var.tags
 }
 
-# Create a load balancer target group.
-resource "aws_lb_target_group" "default" {
-  count    = length(var.services)
-  name     = "${var.name}-${count.index}"
-  port     = var.services[count.index].port
-  protocol = var.services[count.index].protocol
-  vpc_id   = aws_vpc.default.id
-  health_check {
-    protocol            = local._aws_lb_target_group_health_check_protocol[var.services[count.index].protocol]
-    healthy_threshold   = 10
-    unhealthy_threshold = 10
-  }
-}
-
-# Add a listener to the loadbalancer.
-resource "aws_lb_listener" "default" {
+# Allow the service to be accessed.
+resource "aws_security_group_rule" "service" {
   count             = length(var.services)
-  load_balancer_arn = aws_lb.default.arn
-  port              = var.services[count.index].port
-  protocol          = local._listener_protocol[var.services[count.index].protocol]
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.default[count.index].arn
-  }
+  description       = "service-${count.index}"
+  type              = "ingress"
+  from_port         = var.services[count.index].port
+  to_port           = var.services[count.index].port
+  protocol          = local._security_group_rule_protocol[var.services[count.index].protocol]
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.default.id
 }
 
-# Create a placement group that spreads over racks.
-resource "aws_placement_group" "default" {
-  name     = var.name
-  strategy = "spread"
-  # TODO: on `destroy`: Error: InvalidPlacementGroup.InUse: The placement group 'mine' is in use and may not be deleted.
+# Allow access from the bastion host.
+resource "aws_security_group_rule" "ssh" {
+  description       = "bastion"
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "TCP"
+  cidr_blocks       = [var.aws_vpc_cidr_block]
+  security_group_id = aws_security_group.default.id
+}
+
+# Allow internet from the instances. Required for package installations.
+resource "aws_security_group_rule" "internet" {
+  protocol          = "-1"
+  from_port         = 0
+  to_port           = 0
+  type              = "egress"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.default.id
 }
 
 # Create a launch template.
@@ -64,6 +153,7 @@ resource "aws_launch_template" "default" {
   key_name                             = aws_key_pair.default[0].id
   instance_initiated_shutdown_behavior = "terminate"
   user_data                            = fileexists(var.user_data) ? filebase64(var.user_data) : filebase64("${path.module}/user_data.sh")
+  vpc_security_group_ids               = [aws_security_group.default.id]
   block_device_mappings {
     device_name = "/dev/sda1"
     ebs {
@@ -79,18 +169,60 @@ resource "aws_launch_template" "default" {
   monitoring {
     enabled = true
   }
-  network_interfaces {
-    associate_public_ip_address = local.associate_public_ip_address
-    security_groups             = [aws_security_group.default.id]
-  }
   tag_specifications {
     resource_type = "instance"
-    tags = {
-      Name = var.name
-    }
+    tags          = var.tags
   }
   lifecycle {
     create_before_destroy = true
+  }
+}
+
+# Create a placement group that spreads over racks.
+resource "aws_placement_group" "default" {
+  name     = var.name
+  strategy = "spread"
+  tags     = var.tags
+}
+
+# Add a load balancer.
+resource "aws_lb" "default" {
+  name               = var.name
+  load_balancer_type = "network"
+  tags               = var.tags
+  dynamic "subnet_mapping" {
+    for_each = aws_subnet.private.*
+    content {
+      subnet_id = aws_subnet.private[subnet_mapping.key].id
+    }
+  }
+}
+
+# Create a load balancer target group.
+resource "aws_lb_target_group" "default" {
+  count    = length(var.services)
+  name     = "${var.name}-${count.index}"
+  port     = var.services[count.index].port
+  protocol = var.services[count.index].protocol
+  vpc_id   = aws_vpc.default.id
+  tags     = var.tags
+  health_check {
+    protocol            = local._aws_lb_target_group_health_check_protocol[var.services[count.index].protocol]
+    healthy_threshold   = 10
+    unhealthy_threshold = 10
+  }
+}
+
+# Add a listener to the loadbalancer.
+resource "aws_lb_listener" "default" {
+  count             = length(var.services)
+  load_balancer_arn = aws_lb.default.arn
+  port              = var.services[count.index].port
+  protocol          = local._listener_protocol[var.services[count.index].protocol]
+  tags              = var.tags
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.default[count.index].arn
   }
 }
 
@@ -102,8 +234,8 @@ resource "aws_autoscaling_group" "default" {
   max_size              = var.amount + 2
   health_check_type     = "ELB"
   placement_group       = aws_placement_group.default.id
-  max_instance_lifetime = 1 * 24 * 60 * 60
-  vpc_zone_identifier   = tolist(aws_subnet.default[*].id)
+  max_instance_lifetime = var.aws_autoscaling_group_max_instance_lifetime
+  vpc_zone_identifier   = tolist(aws_subnet.private[*].id)
   target_group_arns     = tolist(aws_lb_target_group.default[*].arn)
   launch_template {
     id      = aws_launch_template.default.id
@@ -112,6 +244,7 @@ resource "aws_autoscaling_group" "default" {
   timeouts {
     delete = "15m"
   }
+  # TODO: Add var.tags somehow.
   tag {
     key                 = "name"
     value               = var.name
@@ -122,69 +255,15 @@ resource "aws_autoscaling_group" "default" {
   }
 }
 
-# Place an SSH key.
-resource "aws_key_pair" "default" {
-  count      = fileexists(var.key_location) ? 1 : 0
-  key_name   = var.name
-  public_key = file(var.key_location)
-}
-
-# Create one VPC.
-resource "aws_vpc" "default" {
-  cidr_block = var.aws_vpc_cidr_block
-  tags       = {}
-}
-
-# Create one internet gateway.
-resource "aws_internet_gateway" "default" {
-  vpc_id = aws_vpc.default.id
-  tags   = {}
-}
-
-# Add a routing table to the default routing table.
-resource "aws_default_route_table" "default" {
-  default_route_table_id = aws_vpc.default.default_route_table_id
-  route = [
-    {
-      cidr_block = "0.0.0.0/0"
-      gateway_id = aws_internet_gateway.default.id
-      # Due to an issue, these parameters need to be specified, even though they may be empty.
-      destination_prefix_list_id = ""
-      egress_only_gateway_id     = ""
-      instance_id                = ""
-      ipv6_cidr_block            = ""
-      nat_gateway_id             = ""
-      network_interface_id       = ""
-      transit_gateway_id         = ""
-      vpc_endpoint_id            = ""
-      vpc_peering_connection_id  = ""
-    }
-  ]
-  tags = {}
-}
-
-# Find availability_zones in this region.
-data "aws_availability_zones" "default" {
-  state = "available"
-}
-
-# Create the same amount of subnets as the amount of instances.
-resource "aws_subnet" "default" {
-  count             = min(length(data.aws_availability_zones.default.names), var.amount)
-  vpc_id            = aws_vpc.default.id
-  cidr_block        = "172.16.${count.index}.0/24"
-  availability_zone = data.aws_availability_zones.default.names[count.index]
-  tags              = {}
-}
-
 # Create one security group in the single VPC.
-resource "aws_security_group" "default" {
-  name   = var.name
+resource "aws_security_group" "bastion" {
+  name   = "${var.name}-bastion"
   vpc_id = aws_vpc.default.id
+  tags   = var.tags
 }
 
 # Allow SSH to the security group.
-resource "aws_security_group_rule" "ssh" {
+resource "aws_security_group_rule" "bastion-ssh" {
   count             = var.size == "development" ? 1 : 0
   description       = "ssh"
   type              = "ingress"
@@ -192,64 +271,27 @@ resource "aws_security_group_rule" "ssh" {
   to_port           = 22
   protocol          = "TCP"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.default.id
+  security_group_id = aws_security_group.bastion.id
 }
 
-# Allow the service to be accessed.
-resource "aws_security_group_rule" "service" {
-  count             = length(var.services)
-  description       = "service-${count.index}"
-  type              = "ingress"
-  from_port         = var.services[count.index].port
-  to_port           = var.services[count.index].port
-  protocol          = local._security_group_rule_protocol[var.services[count.index].protocol]
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.default.id
-}
-
-# Allow internet from the instances. Required for package installation.
-resource "aws_security_group_rule" "internet" {
+# Allow internet access.
+resource "aws_security_group_rule" "bastion-internet" {
   protocol          = "-1"
   from_port         = 0
   to_port           = 0
   type              = "egress"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.default.id
+  security_group_id = aws_security_group.bastion.id
 }
 
-# One EIP per nat gateway
-resource "aws_eip" "default" {
-  count = var.size == "development" ? 0 : min(length(data.aws_availability_zones.default.names), var.amount)
-  vpc   = true
-}
-
-# One nat gateway per subnet
-resource "aws_nat_gateway" "default" {
-  count = var.size == "development" ? 0 : min(length(data.aws_availability_zones.default.names), var.amount)
-  allocation_id = aws_eip.default[count.index].id
-  subnet_id     = aws_subnet.default[count.index].id
-  depends_on = [
-    aws_internet_gateway.default
-  ]
-}
-
-# One routing table for every nat gateway
-resource "aws_route_table" "default" {
-  count = var.size == "development" ? 0 : min(length(data.aws_availability_zones.default.names), var.amount)
-  vpc_id = aws_vpc.default.id
-}
-
-# One route for each nat gateway
-resource "aws_route" "default" {
-  count = var.size == "development" ? 0 : min(length(data.aws_availability_zones.default.names), var.amount)
-  route_table_id         = aws_route_table.default[count.index].id
-  destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.default[count.index].id
-}
-
-# Associate the route table to the subnet.
-resource "aws_route_table_association" "nat_gateway" {
-  count = var.size == "development" ? 0 : min(length(data.aws_availability_zones.default.names), var.amount)
-  subnet_id      = aws_subnet.default[count.index].id
-  route_table_id = aws_route_table.default[count.index].id
+# Create the bastion host.
+resource "aws_instance" "bastion" {
+  ami                         = data.aws_ami.default.id
+  subnet_id                   = aws_subnet.public.id
+  instance_type               = "t3.micro"
+  vpc_security_group_ids      = [aws_security_group.bastion.id]
+  key_name                    = aws_key_pair.default[0].id
+  associate_public_ip_address = true
+  monitoring                  = true
+  tags                        = var.tags
 }
