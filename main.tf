@@ -216,3 +216,40 @@ resource "aws_security_group_rule" "internet" {
   cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = aws_security_group.default.id
 }
+
+# One EIP per nat gateway
+resource "aws_eip" "default" {
+  count = var.size == "development" ? 0 : min(length(data.aws_availability_zones.default.names), var.amount)
+  vpc   = true
+}
+
+# One nat gateway per subnet
+resource "aws_nat_gateway" "default" {
+  count = var.size == "development" ? 0 : min(length(data.aws_availability_zones.default.names), var.amount)
+  allocation_id = aws_eip.default[count.index].id
+  subnet_id     = aws_subnet.default[count.index].id
+  depends_on = [
+    aws_internet_gateway.default
+  ]
+}
+
+# One routing table for every nat gateway
+resource "aws_route_table" "default" {
+  count = var.size == "development" ? 0 : min(length(data.aws_availability_zones.default.names), var.amount)
+  vpc_id = aws_vpc.default.id
+}
+
+# One route for each nat gateway
+resource "aws_route" "default" {
+  count = var.size == "development" ? 0 : min(length(data.aws_availability_zones.default.names), var.amount)
+  route_table_id         = aws_route_table.default[count.index].id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.default[count.index].id
+}
+
+# Associate the route table to the subnet.
+resource "aws_route_table_association" "nat_gateway" {
+  count = var.size == "development" ? 0 : min(length(data.aws_availability_zones.default.names), var.amount)
+  subnet_id      = aws_subnet.default[count.index].id
+  route_table_id = aws_route_table.default[count.index].id
+}
