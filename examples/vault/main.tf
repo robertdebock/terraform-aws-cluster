@@ -32,4 +32,7 @@ module "cluster" {
       protocol = "TCP"
     }
   ]
+  tags = {
+    owner    = "robertdebock"
+  }
 }

@@ -8,6 +8,9 @@ module "cluster" {
       protocol = "TCP_UDP"
     }
   ]
+  tags = {
+    owner    = "robertdebock"
+  }
 }
 
 output "aws_lb_dns_name" {
