@@ -70,8 +70,26 @@ variable "aws_vpc_cidr_block" {
   default     = "172.16.0.0/16"
 }
 
-variable "aws_network_interface_private_ips" {
-  description = "List of private IPs to assign to the ENI."
-  type        = list(string)
-  default     = ["172.16.10.100"]
+variable "aws_subnet_default_cidr_block" {
+  description = "The CIDR block for the public subnet."
+  type        = string
+  default     = "172.16.254.0/24"
+}
+
+variable "tags" {
+  default     = {
+    owner = "unset"
+  }
+  description = "Tags to add to resources."
+  type        = map(string)
+}
+
+variable "aws_autoscaling_group_max_instance_lifetime" {
+  description = "The amount of seconds after which to replace the instances."
+  type        = number
+  default     = 86400
+  validation {
+    condition     = var.aws_autoscaling_group_max_instance_lifetime == 0 || (var.aws_autoscaling_group_max_instance_lifetime >= 86400 && var.aws_autoscaling_group_max_instance_lifetime <= 31536000)
+    error_message = "Please use an odd number for amount, like 1, 3 or 5."
+  }
 }
