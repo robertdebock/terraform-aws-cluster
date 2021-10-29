@@ -5,7 +5,6 @@ module "cluster" {
   size   = "development"
   services = [{
     port     = 80
-    # TODO: Add HTTPS somehow.
     protocol = "TCP"
   }]
   tags = {
