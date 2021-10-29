@@ -143,36 +143,14 @@ resource "aws_security_group_rule" "internet" {
 }
 
 # Create a launch template.
-resource "aws_launch_template" "default" {
-  name                                 = var.name
-  update_default_version               = true
-  image_id                             = data.aws_ami.default.id
-  instance_type                        = local.instance_type
-  ebs_optimized                        = true
-  disable_api_termination              = true
-  key_name                             = aws_key_pair.default[0].id
-  instance_initiated_shutdown_behavior = "terminate"
-  user_data                            = fileexists(var.user_data) ? filebase64(var.user_data) : filebase64("${path.module}/user_data.sh")
-  vpc_security_group_ids               = [aws_security_group.default.id]
-  block_device_mappings {
-    device_name = "/dev/sda1"
-    ebs {
-      volume_size = local.volume_size
-    }
-  }
-  capacity_reservation_specification {
-    capacity_reservation_preference = "open"
-  }
-  credit_specification {
-    cpu_credits = "standard"
-  }
-  monitoring {
-    enabled = true
-  }
-  tag_specifications {
-    resource_type = "instance"
-    tags          = var.tags
-  }
+resource "aws_launch_configuration" "default" {
+  name                        = var.name
+  image_id                    = data.aws_ami.default.id
+  instance_type               = local.instance_type
+  key_name                    = aws_key_pair.default[0].id
+  security_groups             = [aws_security_group.default.id]
+  user_data                   = fileexists(var.user_data) ? filebase64(var.user_data) : filebase64("${path.module}/user_data.sh")
+  # TODO: There is no data disk now.
   lifecycle {
     create_before_destroy = true
   }
@@ -209,7 +187,6 @@ resource "aws_lb_target_group" "default" {
 }
 
 # Add a listener to the loadbalancer.
-# TODO: No traffic is passed...
 resource "aws_lb_listener" "default" {
   count             = length(var.services)
   load_balancer_arn = aws_lb.default.arn
@@ -233,10 +210,7 @@ resource "aws_autoscaling_group" "default" {
   max_instance_lifetime = var.aws_autoscaling_group_max_instance_lifetime
   vpc_zone_identifier   = tolist(aws_subnet.private[*].id)
   target_group_arns     = tolist(aws_lb_target_group.default[*].arn)
-  launch_template {
-    id      = aws_launch_template.default.id
-    version = aws_launch_template.default.latest_version
-  }
+  launch_configuration  = aws_launch_configuration.default.name
   timeouts {
     delete = "15m"
   }
