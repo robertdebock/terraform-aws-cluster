@@ -77,6 +77,7 @@ resource "aws_security_group_rule" "service" {
   to_port           = var.services[count.index].port
   protocol          = local._security_group_rule_protocol[var.services[count.index].protocol]
   cidr_blocks       = ["0.0.0.0/0"]
+  # TODO: limit cidr_blocks to the elb addresses.
   security_group_id = aws_security_group.default.id
 }
 

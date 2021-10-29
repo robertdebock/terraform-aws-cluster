@@ -24,7 +24,10 @@ resource "local_file" "default" {
 module "cluster" {
   source = "../../"
   name   = var.name
-  # size   = "development"
+  # TODO: change size, see how Vault reacts.
+  size   = "development"
+  # TODO: Change amount, see how Vault reacts.
+  # amount = 3
   region = var.region
   services = [
     {

@@ -58,3 +58,8 @@ systemctl --now enable vault
 
 # Make administors life a little easier.
 echo "export VAULT_ADDR=http://$${my_ipaddress}:8200" >> /etc/profile
+
+sleep 120
+
+# TODO: Remove the `tee`, `init` produces sensitive data.
+vault operator init | tee /vault/data/init.txt
