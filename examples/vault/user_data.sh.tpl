@@ -30,7 +30,7 @@ storage "raft" {
   path = "/vault/data"
   node_id = "$${my_hostname}"
   retry_join {
-    auto_join        = "provider=aws tag_key=Name tag_value=${name} region=${region} access_key_id=${access_key} secret_access_key=${secret_key}"
+    auto_join        = "provider=aws tag_key=name tag_value=${name} region=${region} access_key_id=${access_key} secret_access_key=${secret_key}"
     auto_join_scheme = "http"
   }
 }
