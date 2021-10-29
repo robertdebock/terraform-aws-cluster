@@ -164,7 +164,7 @@ resource "aws_lb_listener" "default" {
 resource "aws_autoscaling_group" "default" {
   name                  = var.name
   desired_capacity      = var.amount
-  min_size              = var.amount
+  min_size              = var.amount - 1
   max_size              = var.amount + 2
   health_check_type     = "ELB"
   placement_group       = aws_placement_group.default.id
