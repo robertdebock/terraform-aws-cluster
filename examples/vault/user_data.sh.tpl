@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# TODO: /dev/sda1 should be mounted on /vault/data
-
 # Always update packages installed.
 yum update -y
 

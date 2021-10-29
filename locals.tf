@@ -9,24 +9,6 @@ locals {
   }
   instance_type = local._instance_type[var.size]
 
-  _volume_size = {
-    development = 1
-    minimum     = 50
-    small       = 50
-    large       = 100
-    maximum     = 100
-  }
-  volume_size = local._volume_size[var.size]
-
-  _associate_public_ip_address = {
-    development = true
-    minimum     = false
-    small       = false
-    large       = false
-    maximum     = false
-  }
-  associate_public_ip_address = local._associate_public_ip_address[var.size]
-
   # aws_lb_target_group.protocol can be:
   # GENEVE, HTTP, HTTPS, TCP, TCP_UDP, TLS, or UDP.
 
