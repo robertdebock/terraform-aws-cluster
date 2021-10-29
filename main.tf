@@ -22,49 +22,8 @@ resource "aws_route" "default" {
   gateway_id             = aws_internet_gateway.default.id
 }
 
-# One subnet for the internet gateway.
-resource "aws_subnet" "public" {
-  vpc_id     = aws_vpc.default.id
-  cidr_block = var.aws_subnet_public_cidr_block
-  tags       = var.tags
-}
-
-# Associate the subnet to the routing table.
-resource "aws_route_table_association" "nat_gateway" {
-  subnet_id      = aws_subnet.public.id
-  route_table_id = aws_route_table.default.id
-}
-
-# One EIP per nat gateway.
-resource "aws_eip" "nat" {
-  vpc        = true
-  tags       = var.tags
-  depends_on = [aws_internet_gateway.default]
-}
-
-# One nat gateway per subnet.
-resource "aws_nat_gateway" "default" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public.id
-  tags          = var.tags
-  depends_on    = [aws_internet_gateway.default]
-}
-
-# Add a routing table.
-resource "aws_route_table" "nat" {
-  vpc_id = aws_vpc.default.id
-  tags   = var.tags
-}
-
-# Add a route to the routing table.
-resource "aws_route" "nat" {
-  route_table_id         = aws_route_table.nat.id
-  destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.default.id
-}
-
 # Create the same amount of subnets as the amount of instances.
-resource "aws_subnet" "private" {
+resource "aws_subnet" "default" {
   count             = min(length(data.aws_availability_zones.default.names), var.amount)
   vpc_id            = aws_vpc.default.id
   cidr_block        = "172.16.${count.index}.0/24"
@@ -72,11 +31,11 @@ resource "aws_subnet" "private" {
   tags              = var.tags
 }
 
-# Associate the route table to the subnet.
+# Associate the subnet to the routing table.
 resource "aws_route_table_association" "default" {
-  count          = min(length(data.aws_availability_zones.default.names), var.amount)
-  subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.nat.id
+  count = min(length(data.aws_availability_zones.default.names), var.amount)
+  subnet_id      = aws_subnet.default[count.index].id
+  route_table_id = aws_route_table.default.id
 }
 
 # Find availability_zones in this region.
@@ -123,7 +82,7 @@ resource "aws_security_group_rule" "service" {
 
 # Allow access from the bastion host.
 resource "aws_security_group_rule" "ssh" {
-  description       = "bastion"
+  description       = "ssh"
   type              = "ingress"
   from_port         = 22
   to_port           = 22
@@ -134,6 +93,7 @@ resource "aws_security_group_rule" "ssh" {
 
 # Allow internet from the instances. Required for package installations.
 resource "aws_security_group_rule" "internet" {
+  description       = "internet"
   protocol          = "-1"
   from_port         = 0
   to_port           = 0
@@ -150,7 +110,7 @@ resource "aws_launch_configuration" "default" {
   key_name                    = aws_key_pair.default[0].id
   security_groups             = [aws_security_group.default.id]
   user_data                   = fileexists(var.user_data) ? filebase64(var.user_data) : filebase64("${path.module}/user_data.sh")
-  # TODO: There is no data disk now.
+  associate_public_ip_address = true
   lifecycle {
     create_before_destroy = true
   }
@@ -167,7 +127,7 @@ resource "aws_placement_group" "default" {
 resource "aws_lb" "default" {
   name               = var.name
   load_balancer_type = "network"
-  subnets            = aws_subnet.private.*.id
+  subnets            = aws_subnet.default.*.id
   tags               = var.tags
 }
 
@@ -208,17 +168,17 @@ resource "aws_autoscaling_group" "default" {
   health_check_type     = "ELB"
   placement_group       = aws_placement_group.default.id
   max_instance_lifetime = var.aws_autoscaling_group_max_instance_lifetime
-  vpc_zone_identifier   = tolist(aws_subnet.private[*].id)
+  vpc_zone_identifier   = tolist(aws_subnet.default[*].id)
   target_group_arns     = tolist(aws_lb_target_group.default[*].arn)
   launch_configuration  = aws_launch_configuration.default.name
-  timeouts {
-    delete = "15m"
-  }
-  # TODO: Add var.tags somehow.
   tag {
     key                 = "name"
     value               = var.name
     propagate_at_launch = true
+  }
+
+  timeouts {
+    delete = "15m"
   }
   lifecycle {
     create_before_destroy = true
@@ -245,6 +205,7 @@ resource "aws_security_group_rule" "bastion-ssh" {
 
 # Allow internet access.
 resource "aws_security_group_rule" "bastion-internet" {
+  description       = "internet"
   protocol          = "-1"
   from_port         = 0
   to_port           = 0
@@ -256,7 +217,7 @@ resource "aws_security_group_rule" "bastion-internet" {
 # Create the bastion host.
 resource "aws_instance" "bastion" {
   ami                         = data.aws_ami.default.id
-  subnet_id                   = aws_subnet.public.id
+  subnet_id                   = aws_subnet.default[0].id
   instance_type               = "t3.micro"
   vpc_security_group_ids      = [aws_security_group.bastion.id]
   key_name                    = aws_key_pair.default[0].id
