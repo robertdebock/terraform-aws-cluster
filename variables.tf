@@ -70,7 +70,7 @@ variable "aws_vpc_cidr_block" {
   default     = "172.16.0.0/16"
 }
 
-variable "aws_subnet_default_cidr_block" {
+variable "aws_subnet_public_cidr_block" {
   description = "The CIDR block for the public subnet."
   type        = string
   default     = "172.16.254.0/24"

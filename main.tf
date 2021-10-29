@@ -25,7 +25,7 @@ resource "aws_route" "default" {
 # One subnet for the internet gateway.
 resource "aws_subnet" "public" {
   vpc_id     = aws_vpc.default.id
-  cidr_block = var.aws_subnet_default_cidr_block
+  cidr_block = var.aws_subnet_public_cidr_block
   tags       = var.tags
 }
 
@@ -189,13 +189,8 @@ resource "aws_placement_group" "default" {
 resource "aws_lb" "default" {
   name               = var.name
   load_balancer_type = "network"
+  subnets            = aws_subnet.private.*.id
   tags               = var.tags
-  dynamic "subnet_mapping" {
-    for_each = aws_subnet.private.*
-    content {
-      subnet_id = aws_subnet.private[subnet_mapping.key].id
-    }
-  }
 }
 
 # Create a load balancer target group.
@@ -214,6 +209,7 @@ resource "aws_lb_target_group" "default" {
 }
 
 # Add a listener to the loadbalancer.
+# TODO: No traffic is passed...
 resource "aws_lb_listener" "default" {
   count             = length(var.services)
   load_balancer_arn = aws_lb.default.arn
@@ -264,7 +260,6 @@ resource "aws_security_group" "bastion" {
 
 # Allow SSH to the security group.
 resource "aws_security_group_rule" "bastion-ssh" {
-  count             = var.size == "development" ? 1 : 0
   description       = "ssh"
   type              = "ingress"
   from_port         = 22
