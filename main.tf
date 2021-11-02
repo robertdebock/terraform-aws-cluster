@@ -189,6 +189,7 @@ resource "aws_autoscaling_group" "default" {
 
 # Create one security group in the single VPC.
 resource "aws_security_group" "bastion" {
+  count  = var.bastion_host ? 1 : 0
   name   = "${var.name}-bastion"
   vpc_id = aws_vpc.default.id
   tags   = var.tags
@@ -196,32 +197,35 @@ resource "aws_security_group" "bastion" {
 
 # Allow SSH to the security group.
 resource "aws_security_group_rule" "bastion-ssh" {
+  count             = var.bastion_host ? 1 : 0
   description       = "ssh"
   type              = "ingress"
   from_port         = 22
   to_port           = 22
   protocol          = "TCP"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.bastion.id
+  security_group_id = aws_security_group.bastion[0].id
 }
 
 # Allow internet access.
 resource "aws_security_group_rule" "bastion-internet" {
+  count             = var.bastion_host ? 1 : 0
   description       = "internet"
   protocol          = "-1"
   from_port         = 0
   to_port           = 0
   type              = "egress"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.bastion.id
+  security_group_id = aws_security_group.bastion[0].id
 }
 
 # Create the bastion host.
 resource "aws_instance" "bastion" {
+  count                       = var.bastion_host ? 1 : 0
   ami                         = data.aws_ami.default.id
   subnet_id                   = aws_subnet.default[0].id
   instance_type               = "t3.micro"
-  vpc_security_group_ids      = [aws_security_group.bastion.id]
+  vpc_security_group_ids      = [aws_security_group.bastion[0].id]
   key_name                    = aws_key_pair.default[0].id
   associate_public_ip_address = true
   monitoring                  = true

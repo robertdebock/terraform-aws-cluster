@@ -64,6 +64,12 @@ variable "user_data" {
   default     = "user_data.sh"
 }
 
+variable "bastion_host" {
+  description = "A bastion host is optional and would allow you to login to the instances."
+  type        = bool
+  default     = true
+}
+
 variable "aws_vpc_cidr_block" {
   description = "The CIDR block for the VPC."
   type        = string
