@@ -14,12 +14,9 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - name: consul
           - name: default
           - name: httpd
           - name: single
-          # Can't test, AWS_SECRET_ACCESS_KEY is not available in CI.
-          # - name: vault
     steps:
       - name: checkout
         uses: actions/checkout@v2
