@@ -56,6 +56,5 @@ To understand the cost for this service, you can use cost.modules.tf:
 
 ```shell
 terraform apply
-terraform state pull | curl -s -X POST -H "Content-Type: application/json" -
-d @- https://cost.modules.tf/
+terraform state pull | curl -s -X POST -H "Content-Type: application/json" -d @- https://cost.modules.tf/
 ```
