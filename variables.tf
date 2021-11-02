@@ -90,6 +90,6 @@ variable "aws_autoscaling_group_max_instance_lifetime" {
   default     = 86400
   validation {
     condition     = var.aws_autoscaling_group_max_instance_lifetime == 0 || (var.aws_autoscaling_group_max_instance_lifetime >= 86400 && var.aws_autoscaling_group_max_instance_lifetime <= 31536000)
-    error_message = "Please use an odd number for amount, like 1, 3 or 5."
+    error_message = "Use \"0\" to remove the parameter or a value between \"86400\" and \"31536000\"."
   }
 }
