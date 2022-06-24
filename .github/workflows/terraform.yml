@@ -19,7 +19,7 @@ jobs:
           - name: single
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: generate ssh keys
         run: |
           cd ./examples/${{ matrix.config.name }}
